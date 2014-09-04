@@ -160,8 +160,8 @@ after the IP address and subnet mask:
 Let's pretend that you want to run two Hipache instances, listening on real
 interfaces eth2 and eth3, using specific (public) IP addresses. Easy!
 
-    pipework eth2 $(docker run -d hipache /usr/sbin/hipache) 50.19.169.157
-    pipework eth3 $(docker run -d hipache /usr/sbin/hipache) 107.22.140.5
+    pipework eth2 $(docker run -d hipache /usr/sbin/hipache) 50.19.169.157/24
+    pipework eth3 $(docker run -d hipache /usr/sbin/hipache) 107.22.140.5/24
 
 Note that this will use `macvlan` subinterfaces, so you can actually put
 multiple containers on the same physical interface.
@@ -227,13 +227,20 @@ specify `dhcp` instead of an IP address; for instance:
 
     pipework eth1 $CONTAINERID dhcp
 
+The value of $CONTAINERID will be provided to the DHCP client to use
+as the hostname in the DHCP request. Depending on the configuration of
+your network's DHCP server, this may enable other machines on the network
+to access the container using the $CONTAINERID as a hostname; therefore,
+specifying $CONTAINERID as a container name rather than a container id
+may be more appropriate in this use-case.
+
 You need three things for this to work correctly:
 
 - obviously, a DHCP server (in the example above, a DHCP server should
   be listening on the network to which we are connected on `eth1`);
-- the `udhcpc` DHCP client must be installed on your Docker *host*
-  (you don't have to install it in your containers, but it must be
-  present on the host);
+- a DHCP client (either `udhcpc`, `dhclient` or `dhcpcp`) must be installed
+  on your Docker *host* (you don't have to install it in your containers,
+  but it must be present on the host);
 - the underlying network must support bridged frames.
 
 The last item might be particularly relevant if you are trying to
@@ -252,7 +259,7 @@ If you need to specify the MAC address to be used (either by the `macvlan`
 subinterface, or the `veth` interface), no problem. Just add it as the
 command-line, as the last argument:
 
-    pipework eth0 $(docker run -d haproxy) 192.168.1.2 26:2e:71:98:60:8f
+    pipework eth0 $(docker run -d haproxy) 192.168.1.2/24 26:2e:71:98:60:8f
 
 This can be useful if your network environment requires whitelisting
 your hardware addresses (some hosting providers do that), or if you want
